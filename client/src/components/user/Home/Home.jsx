@@ -5,7 +5,6 @@ import { useActionData } from 'react-router-dom'
 import axios from "../../../api/axios";
 import { useSelector, useDispatch } from 'react-redux';
 import { getUserData, logout } from '../../../redux/features/userDataSlice';
-import { menuHide } from '../../../redux/features/menuSlice';
 import { DownVote, DropDown, Media, UpVote } from '../../../assets/icons/Icons';
 import QuestionHome from './QuestionHome';
 import spinnerBlack from '../../../assets/Images/spinner-black-trans.gif'
@@ -109,7 +108,6 @@ function Home() {
             setLoader(true);
             const token = localStorage.getItem('user')
             if (!token) {
-                console.log('no token from question submit');
                 setInput({
                     title: '',
                     body: '',
@@ -138,7 +136,6 @@ function Home() {
             }
             setLoader(false);
         } catch (err) {
-            console.log(err);
             if (err == 'no token') {
                 setInput({
                     title: '',
@@ -251,7 +248,7 @@ function Home() {
 
     return (
         <>
-            <div className='mx-72' onClick={() => dispatch(menuHide())}>
+            <div className='mx-72'>
 
                 {/* Asking questions */}
                 <div className='flex flex-row border-gray-400 border mx-56 rounded-lg mb-4'>

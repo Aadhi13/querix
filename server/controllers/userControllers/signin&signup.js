@@ -73,33 +73,41 @@ const otpResend = async (req, res) => {
     try {
         const { email } = req.body;
         const userDetails = await userData.findOne({ email });
-        const data = { _id: userDetails._id, name: userDetails.name, email: userDetails.email };
-        await userOtpData.findOneAndDelete({ email });
-        try {
-            await sendOtpVerificationMail(data, req, res);
-            const { expiresAt } = await userOtpData.findOne({ email }) || {};
-            return res.status(200).json({ message: 'Request is received', expiresAt });
-        } catch (err) {
-            return res.status(500).json({ message: 'Something went wrong.' });
+        if (userDetails) {
+            const data = { _id: userDetails._id, name: userDetails.name, email: userDetails.email };
+            await userOtpData.findOneAndDelete({ email });
+            try {
+                await sendOtpVerificationMail(data, req, res);
+                const { expiresAt } = await userOtpData.findOne({ email }) || {};
+                return res.status(200).json({ message: 'Request is received', expiresAt });
+            } catch (err) {
+                return res.status(500).json({ message: 'Something went wrong.' });
+            }
+        } else {
+            return res.status(422).json({ message: 'Email is missing. Try sign in.' });
         }
     } catch (err) {
         console.log(err.message);
+        return res.status(500).json({ message: 'Something went wrong.' });
     }
 }
 
 const userSignin = async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log(req.body)
         const userDetails = await userData.findOne({ email });
         if (userDetails) {
             if (userDetails.blockStatus == true) return res.status(403).json({ message: 'Access Denied: Your account has been suspended.' });
             if (userDetails.verifyStatus == false) {
                 try {
                     const data = { _id: userDetails._id, name: userDetails.name, email: userDetails.email };
+                    console.log(data)
                     await userOtpData.findOneAndDelete({ email });
                     await sendOtpVerificationMail(data, req, res);
                     const { expiresAt } = await userOtpData.findOne({ email }) || {};
-                    return res.status(200).json({ message: 'User is not verified, OTP sended to mail.', expiresAt });
+                    data.expiresAt = expiresAt;
+                    return res.status(200).json({ message: 'User is not verified, OTP sended to mail.', data });
                 } catch (err) {
                     return res.status(500).json({ message: 'Something went wrong.' });
                 }

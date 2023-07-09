@@ -5,31 +5,43 @@ import axios from "../../../api/axios";
 function OtpVerify() {
     const [otp, setOtp] = useState('');
     const location = useLocation();
-    const { email, name } = location.state;
-    const [expiresAt, setExpiresAt] = useState(location.state.expiresAt)
+    const expiresAtState = location.state.data.expiresAt;
+    const {email, name} = location.state.data;
+    const [expiresAt, setExpiresAt] = useState(expiresAtState);
     const [loader, setLoader] = useState(false);
     const errRef = useRef();
+    const succRef = useRef();
     const [errMsg, setErrMsg] = useState("");
+    const [succMsg, setSuccMsg] = useState("");
     const navigate = useNavigate();
 
     const resendOtp = async (e) => {
         e.preventDefault();
         try {
             setLoader(true);
+            setOtp('');
             const response = await axios.post('/otp-resend', { email });
             setExpiresAt(response.data.expiresAt);
             setLoader(false);
             if (response.data.message === 'Request is received') {
-                setErrMsg('Successfully resent OTP; check your mail.')
+                setErrMsg('')
+                setSuccMsg('Successfully resented OTP; check your mail.')
             }
         } catch (err) {
             if (!err?.response) {
+                setSuccMsg('');
                 setErrMsg('No server response.');
             } else if (err.code === "ERR_NETWORK") {
+                setSuccMsg('');
                 setErrMsg(err.message);
             } else if (err.response.data.message === 'Something went wrong.') {
+                setSuccMsg('');
                 setErrMsg('Something went wrong.');
+            } else if (err.response.data.message === 'Email is missing. Try signing in.') {
+                setSuccMsg('');
+                setErrMsg('An unexpected error occurred. Try signing in.');
             } else {
+                setSuccMsg('');
                 setErrMsg('Something went wrong.');
             }
             errRef.current.focus();
@@ -42,6 +54,7 @@ function OtpVerify() {
         try {
             const response = await axios.post('/otp-verify', { otp, email });
             if (response.data.message === 'Email is already verified.') {
+                setSuccMsg('')
                 setErrMsg('Email is already verified.');
                 navigate('/signin');
             } else if (response.data.message === 'OTP is correct, email verified.') {
@@ -51,18 +64,25 @@ function OtpVerify() {
 
         } catch (err) {
             if (!err?.response) {
+                setSuccMsg('')
                 setErrMsg('No server response.');
             } else if (err.code === "ERR_NETWORK") {
+                setSuccMsg('')
                 setErrMsg(err.message);
             } else if (err.response.data.message === 'OTP is expired.') {
+                setSuccMsg('')
                 setErrMsg('OTP is expired.');
             } else if (err.response.data.message === 'OTP is not valid.') {
+                setSuccMsg('')
                 setErrMsg('OTP is not valid.');
             } else if (err.response.data.message === 'Internal server error.') {
+                setSuccMsg('')
                 setErrMsg('Internal server error.');
             } else if (err.response.data.message === 'Something went wrong.') {
+                setSuccMsg('')
                 setErrMsg("Something went wrong.");
             } else {
+                setSuccMsg('')
                 setErrMsg('Registration Failed.');
             }
             errRef.current.focus();
@@ -72,14 +92,11 @@ function OtpVerify() {
     //Countdown componenet for displaying remaing time to otp to expire.
     function Countdown({ expireTime }) {
         const [remainingTime, setRemainingTime] = useState(calculateRemainingTime());
-
         useEffect(() => {
             let intervalId = null;
-
             if (remainingTime > 0) {
                 intervalId = setInterval(() => {
                     setRemainingTime(calculateRemainingTime());
-                    console.log('interval');
                 }, 1000);
             }
             return () => clearInterval(intervalId);
@@ -102,7 +119,7 @@ function OtpVerify() {
             <span>
                 {remainingTime > 0 ? (
                     <>
-                        <span>OTP expires in</span>
+                        <span><abbr title="One Time Password">OTP</abbr> expires in</span>
                         <span className='text-red-700 font-semibold'>&nbsp;{formatTime(remainingTime)}&nbsp;</span>
                         <span>minutes.</span>
                     </>
@@ -119,7 +136,7 @@ function OtpVerify() {
             <div className='items-center justify-center flex max-w-2xl m-auto' style={{ height: '91vh' }}>
                 <div className='rounded-lg shadow-lg shadow-gray-300 bg-gray-100 p-6'>
                     <h1 className='flex justify-center font-bold text-4xl mb-6 mt-2'>Email Verification </h1>
-                    <p className='text-center'>Hi <span className='font-medium'>{name}</span>, we emailed you the six digit code to <span className='font-medium'>{email}</span>. Enter the code below to confirm your email address.</p>
+                    <p className='text-center'>Hi <span className='font-medium'>{name}</span>, we emailed you the six digit <abbr title="One Time Password">OTP</abbr> to <span className='font-medium'>{email}</span>. Enter the code below to confirm your email address.</p>
                     <form className='mb-5 mt-6 flex items-center  justify-center' onSubmit={handleSubmit}>
                         <input type="text"
                             required
@@ -133,6 +150,9 @@ function OtpVerify() {
                     <div className='flex justify-center items-center mb-2'>
                         <p ref={errRef} className={errMsg ? "errmsg text-red-700" : "offscreen"} >
                             {errMsg}
+                        </p>
+                        <p ref={succRef} className={succMsg ? "errmsg text-green-700" : "offscreen"} >
+                            {succMsg}
                         </p>
                     </div>
                     <div className='flex items-center justify-center'>

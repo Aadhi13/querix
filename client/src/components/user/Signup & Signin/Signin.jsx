@@ -55,7 +55,6 @@ function Signin() {
     }, [])
 
     async function handleGoogleSignInCallback(response) {
-        console.log('Encoded JWT ID token: ', response.credential)
         try {
             const res = await axios.post('/signin-google', {}, {
                 headers: {
@@ -81,7 +80,7 @@ function Signin() {
             errRef.current.focus();
         }
     }
-    
+
 
     const handleChange = ({ currentTarget: input }) => {
         setErrMsg('');
@@ -117,13 +116,11 @@ function Signin() {
         try {
             setLoader(true);
             const response = await axios.post("/signin", data);
-            const email = data.email;
-            const name = data.name;
             setLoader(false);
             if (response.data.message === 'User is not verified, OTP sended to mail.') {
                 setErrMsg('This email is not verified, OTP sended to mail.');
-                const expiresAt = response.data.expiresAt;
-                navigate('/otp-verify', { state: { email, name, expiresAt } });
+                const data = response.data.data
+                navigate('/otp-verify', { state: { data } });
             } else if (response.data.message === 'Access Token is created.') {
                 localStorage.setItem('user', response.data.accessToken);
                 navigate('/');

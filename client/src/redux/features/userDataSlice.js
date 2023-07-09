@@ -14,7 +14,6 @@ const getUserData = createAsyncThunk('userData/getUserData', async (user, thunkA
         }));
         return response.data.data;
     } catch (err) {
-        console.log('err',err.message);
         if (err.response.data.message == 'Invalid jwt token.' || err.response.data.message == 'Jwt expired.') {
             localStorage.removeItem('user');
             return thunkAPI.rejectWithValue(err.response.data.message)

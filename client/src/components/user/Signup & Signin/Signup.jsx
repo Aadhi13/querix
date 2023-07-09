@@ -63,7 +63,6 @@ function Signup() {
   }, [])
 
   async function handleGoogleSignInCallback(response) {
-    console.log('Encoded JWT ID token: ', response.credential)
     try {
       const res = await axios.post('/signin-google', {}, {
         headers: {
@@ -125,11 +124,12 @@ function Signup() {
     try {
       setLoader(true);
       const response = await axios.post("/signup", data);
-      const email = data.email;
-      const name = data.name;
-      const expiresAt = response.data.expiresAt;
+      const userData = response.data
+      userData.name = data.name;
+      userData.email = data.email;
+      console.log('userData from sign up',userData)
       setLoader(false);
-      navigate('/otp-verify', { state: { email, name, expiresAt } });
+      navigate('/otp-verify', { state: { data: userData } });
     } catch (err) {
       setLoader(false);
       if (!err?.response) {
